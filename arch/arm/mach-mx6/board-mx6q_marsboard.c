@@ -492,6 +492,13 @@ static int mx6q_marsboard_fec_phy_init(struct phy_device *phydev)
         val |= 0x0100;
         phy_write(phydev, 0x1e, val);
 
+	/* rgmii gtx clock delay */
+	phy_write(phydev, 0x1d, 0xb);
+	val = phy_read(phydev, 0x1e);
+	val &= ~0x60;
+	val |= 0x20;
+	phy_write(phydev, 0x1e, val);
+
         /*check phy power*/
         val = phy_read(phydev, 0x0);
 
