@@ -408,7 +408,9 @@ static int mxcfb_set_par(struct fb_info *fbi)
 			sig_cfg.Hsync_pol = true;
 		if (fbi->var.sync & FB_SYNC_VERT_HIGH_ACT)
 			sig_cfg.Vsync_pol = true;
-		if (!(fbi->var.sync & FB_SYNC_CLK_LAT_FALL))
+		if (!strcmp(mxc_fbi->dispdrv->drv->name, "lcd"))	//embest
+			sig_cfg.clk_pol = false;
+		else if (!(fbi->var.sync & FB_SYNC_CLK_LAT_FALL))
 			sig_cfg.clk_pol = true;
 		if (fbi->var.sync & FB_SYNC_DATA_INVERT)
 			sig_cfg.data_pol = true;
@@ -624,6 +626,9 @@ static int mxcfb_check_var(struct fb_var_screeninfo *var, struct fb_info *info)
 	u32 vtotal;
 	u32 htotal;
 	struct mxcfb_info *mxc_fbi = (struct mxcfb_info *)info->par;
+
+	if (var->pixclock == 0)			//embest
+		return -EINVAL;			
 
 	/* fg should not bigger than bg */
 	if (mxc_fbi->ipu_ch == MEM_FG_SYNC) {
