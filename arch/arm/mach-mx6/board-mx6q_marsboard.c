@@ -95,6 +95,8 @@
 #define MX6Q_MARSBOARD_VOL_DOWN_KEY	IMX_GPIO_NR(4, 5)
 #define MX6Q_MARSBOARD_CSI0_RST		IMX_GPIO_NR(1, 8)
 #define MX6Q_MARSBOARD_CSI0_PWN		IMX_GPIO_NR(1, 6)
+//#define MX6Q_MARSBOARD_LCD_PWN		IMX_GPIO_NR(1, 29)
+#define MX6Q_MARSBOARD_LED_PWN		IMX_GPIO_NR(6, 15)
 #define MX6Q_MARSBOARD_SYS_LED          IMX_GPIO_NR(5, 2)
 #define MX6Q_MARSBOARD_USER_LED         IMX_GPIO_NR(3, 28)
 
@@ -163,6 +165,7 @@ static iomux_v3_cfg_t mx6q_marsboard_pads[] = {
 
 	/* GPIO1 */
 //	MX6Q_PAD_ENET_RX_ER__GPIO_1_24,		/* J9 - Microphone Detect */
+	MX6Q_PAD_ENET_TXD1__GPIO_1_29,		/* LCD_PWR_ENR */
 
 	/* GPIO2 */
 	MX6Q_PAD_NANDF_D1__GPIO_2_1,	/* J14 - Menu Button */
@@ -210,6 +213,8 @@ static iomux_v3_cfg_t mx6q_marsboard_pads[] = {
 
 	/* GPIO6 */
 	MX6Q_PAD_EIM_A23__GPIO_6_6,	/* J12 - Boot Mode Select */
+	MX6Q_PAD_NANDF_CS1__GPIO_6_14,  /* Touch Int */
+	MX6Q_PAD_NANDF_CS2__GPIO_6_15,  /* LED_PWR_EN */
 
 	/* GPIO7 */
 	MX6Q_PAD_GPIO_17__GPIO_7_12,	/* USB Hub Reset */
@@ -224,13 +229,9 @@ static iomux_v3_cfg_t mx6q_marsboard_pads[] = {
 	MX6Q_PAD_KEY_ROW3__I2C2_SDA,	/* GPIO4[13] */
 
 	/* I2C3 */
-	MX6Q_PAD_GPIO_5__I2C3_SCL,	/* GPIO1[5] - J7 - Display card */
-#ifdef CONFIG_FEC_1588
-	MX6Q_PAD_GPIO_16__ENET_ANATOP_ETHERNET_REF_OUT,
-#else
-	MX6Q_PAD_GPIO_16__I2C3_SDA,	/* GPIO7[11] - J15 - RGB connector */
-#endif
-
+        MX6Q_PAD_GPIO_5__I2C3_SCL,      /* GPIO1[5] - I2C3_SCL */
+        MX6Q_PAD_GPIO_6__I2C3_SDA,      /* GPIO1[6] - I2C3_sDA */
+	
 	/* DISPLAY */
 	MX6Q_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK,
 	MX6Q_PAD_DI0_PIN15__IPU1_DI0_PIN15,		/* DE */
@@ -349,7 +350,7 @@ static iomux_v3_cfg_t mx6q_marsboard_csi0_sensor_pads[] = {
 	MX6Q_PAD_CSI0_MCLK__IPU1_CSI0_HSYNC,
 	MX6Q_PAD_CSI0_PIXCLK__IPU1_CSI0_PIXCLK,
 	MX6Q_PAD_CSI0_VSYNC__IPU1_CSI0_VSYNC,
-	MX6Q_PAD_GPIO_6__GPIO_1_6,		/* J5 - Camera GP */
+//	MX6Q_PAD_GPIO_6__GPIO_1_6,		/* J5 - Camera GP */
 	MX6Q_PAD_GPIO_8__GPIO_1_8,		/* J5 - Camera Reset */
 	MX6Q_PAD_SD1_DAT0__GPIO_1_16,		/* J5 - Camera GP */
 	MX6Q_PAD_NANDF_D5__GPIO_2_5,		/* J16 - MIPI GP */
@@ -839,11 +840,11 @@ static struct imx_asrc_platform_data imx_asrc_data = {
 
 static struct ipuv3_fb_platform_data marsboard_fb_data[] = {
 	{ /*fb0*/
-	.disp_dev = "lcd",
-	.interface_pix_fmt = IPU_PIX_FMT_RGB24,
-	.mode_str = "7inch_LCD",
-	.default_bpp = 32,
-	.int_clk = false,
+        .disp_dev = "ldb",
+        .interface_pix_fmt = IPU_PIX_FMT_RGB666,
+        .mode_str = "LDB-XGA",
+        .default_bpp = 32,
+        .int_clk = false,
 	}, {
 	.disp_dev = "hdmi",
 	.interface_pix_fmt = IPU_PIX_FMT_RGB24,
@@ -851,11 +852,11 @@ static struct ipuv3_fb_platform_data marsboard_fb_data[] = {
 	.default_bpp = 32,
 	.int_clk = false,
 	}, {
-	.disp_dev = "ldb",
-	.interface_pix_fmt = IPU_PIX_FMT_RGB666,
-	.mode_str = "LDB-XGA",
-	.default_bpp = 32,
-	.int_clk = false,
+        .disp_dev = "lcd",
+        .interface_pix_fmt = IPU_PIX_FMT_RGB24,
+        .mode_str = "7inch_LCD",
+        .default_bpp = 32,
+        .int_clk = false,
 	},
 };
 
@@ -895,9 +896,33 @@ static struct fsl_mxc_lcd_platform_data lcdif_data = {
 	.default_ifmt = IPU_PIX_FMT_RGB24,
 };
 
+static void ldb_init(void)
+{
+	int ret;
+
+        ret = gpio_request(MX6Q_MARSBOARD_LED_PWN, "led_pwn");
+        if (ret) {
+                pr_err("failed to get GPIO MX6Q_MARSBOARD_LED_PWN: %d\n",
+                        ret);
+                return;
+        }
+
+        gpio_direction_output(MX6Q_MARSBOARD_LED_PWN, 1);
+#if 0
+        ret = gpio_request(MX6Q_MARSBOARD_LCD_PWN, "lcd_pwn");
+        if (ret) {
+                pr_err("failed to get GPIO MX6Q_MARSBOARD_LCD_PWN: %d\n",
+                        ret);
+                return;
+        }
+
+        gpio_direction_output(MX6Q_MARSBOARD_LCD_PWN, 1);
+#endif
+}
+
 static struct fsl_mxc_ldb_platform_data ldb_data = {
-	.ipu_id = 1,
-	.disp_id = 0,
+	.ipu_id = 0,
+	.disp_id = 1,
 	.ext_ref = 1,
 	.mode = LDB_SEP0,
 	.sec_ipu_id = 1,
@@ -1131,8 +1156,15 @@ static int imx6q_init_audio(void)
 	return 0;
 }
 
-static struct platform_pwm_backlight_data mx6_marsboard_pwm_backlight_data = {
+static struct platform_pwm_backlight_data mx6_marsboard_lcd_backlight_data = {
 	.pwm_id = 2,
+	.max_brightness = 255,
+	.dft_brightness = 128,
+	.pwm_period_ns = 50000,
+};
+
+static struct platform_pwm_backlight_data mx6_marsboard_ldb_backlight_data = {
+	.pwm_id = 3,
 	.max_brightness = 255,
 	.dft_brightness = 128,
 	.pwm_period_ns = 50000,
@@ -1237,6 +1269,8 @@ static void __init mx6_marsboard_board_init(void)
 	imx6q_add_mipi_csi2(&mipi_csi2_pdata);
 	imx6q_add_imx_snvs_rtc();
 
+	ldb_init();
+
 	imx6q_add_imx_i2c(0, &mx6q_marsboard_i2c_data);
 	imx6q_add_imx_i2c(1, &mx6q_marsboard_i2c_data);
 	imx6q_add_imx_i2c(2, &mx6q_marsboard_i2c_data);
@@ -1277,7 +1311,8 @@ static void __init mx6_marsboard_board_init(void)
 	imx6q_add_mxc_pwm(1);
 	imx6q_add_mxc_pwm(2);
 	imx6q_add_mxc_pwm(3);
-	imx6q_add_mxc_pwm_backlight(2, &mx6_marsboard_pwm_backlight_data);
+	imx6q_add_mxc_pwm_backlight(2, &mx6_marsboard_lcd_backlight_data);
+	imx6q_add_mxc_pwm_backlight(3, &mx6_marsboard_ldb_backlight_data);
 
 	imx6q_add_otp();
 	imx6q_add_viim();
