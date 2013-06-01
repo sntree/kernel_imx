@@ -96,6 +96,12 @@ static const struct fb_videomode vga_mode = {
 	FB_VMODE_NONINTERLACED | FB_VMODE_ASPECT_4_3, 0,
 };
 
+static const struct fb_videomode svga_mode = {
+	/* 800x600 @ 60 Hz, 37.98 kHz hsync */
+	NULL, 60, 800, 600, KHZ2PICOS(40000), 151, 39, 23, 1, 63, 3, 0,
+	FB_VMODE_NONINTERLACED, 0, 
+};
+
 static const struct fb_videomode xga_mode = {
 	/* 13 1024x768-60 VESA */
 	NULL, 60, 1024, 768, 15384, 160, 24, 29, 3, 136, 6,
@@ -1646,6 +1652,7 @@ static void  mxc_hdmi_default_modelist(struct mxc_hdmi *hdmi)
 	}
 
 	/*Add XGA and SXGA to default modelist */
+	fb_add_videomode(&svga_mode, &hdmi->fbi->modelist);
 	fb_add_videomode(&xga_mode, &hdmi->fbi->modelist);
 	fb_add_videomode(&sxga_mode, &hdmi->fbi->modelist);
 
@@ -2238,6 +2245,7 @@ static int mxc_hdmi_disp_init(struct mxc_dispdrv_handle *disp,
 	}
 
 	/*Add XGA and SXGA to default modelist */
+	fb_add_videomode(&svga_mode, &hdmi->fbi->modelist);
 	fb_add_videomode(&xga_mode, &hdmi->fbi->modelist);
 	fb_add_videomode(&sxga_mode, &hdmi->fbi->modelist);
 
