@@ -637,7 +637,7 @@ static struct platform_device mx6_marsboard_audio_device = {
 };
 
 static struct imxi2c_platform_data mx6q_marsboard_i2c_data = {
-	.bitrate = 100000,
+	.bitrate = 400000,
 };
 
 static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
