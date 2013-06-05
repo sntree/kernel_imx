@@ -22,6 +22,7 @@
 // Includes
 // ****************************************************************************
 #include <linux/slab.h>
+#include <generated/mach-types.h>
 #include "core_i2c.h"
 #include "plat_i2c.h"
 
@@ -98,10 +99,15 @@ void platform_i2c_get_cfg(struct struct_platform_i2c_var *platform_i2c_data)
 	platform_i2c_data->i2c_addr = PLATFORM_I2C_ADDR;
 
 	/* GPIO config */
-	platform_i2c_data->pwr = PLATFORM_GEN_PWR_PIN;
-	platform_i2c_data->rst = PLATFORM_GEN_RST_PIN;
-	platform_i2c_data->ss = PLATFORM_GEN_IRQ_PIN;
-
+	if (machine_is_mx6q_sabrelite()) {
+        	platform_i2c_data->pwr = PLATFORM_SABRELITE_PWR_PIN;
+       		platform_i2c_data->rst = PLATFORM_SABRELITE_RST_PIN;
+        	platform_i2c_data->ss = PLATFORM_SABRELITE_IRQ_PIN;		
+	} else if (machine_is_mx6q_marsboard()) {
+		platform_i2c_data->pwr = PLATFORM_MARSBOARD_PWR_PIN;
+		platform_i2c_data->rst = PLATFORM_MARSBOARD_RST_PIN;
+		platform_i2c_data->ss = PLATFORM_MARSBOARD_IRQ_PIN;
+	}
 	/* IRQ config*/
 	platform_i2c_data->irq = gpio_to_irq(platform_i2c_data->ss);
 }

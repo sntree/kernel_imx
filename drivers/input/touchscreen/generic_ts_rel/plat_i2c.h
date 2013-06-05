@@ -59,10 +59,15 @@
 #define PLATFORM_AML_IRQ_PIN			PAD_GPIOA_16
 #define PLATFORM_AML_IRQ_NUM			INT_GPIO_0
 
-/* general config */
-#define PLATFORM_GEN_PWR_PIN                    0//
-#define PLATFORM_GEN_RST_PIN                    IMX_GPIO_NR(1, 29)
-#define PLATFORM_GEN_IRQ_PIN                    IMX_GPIO_NR(6, 14)
+/* sabrelite config */
+#define PLATFORM_SABRELITE_PWR_PIN                    0//
+#define PLATFORM_SABRELITE_RST_PIN                    IMX_GPIO_NR(2, 0)
+#define PLATFORM_SABRELITE_IRQ_PIN                    IMX_GPIO_NR(1, 9)
+
+/* marsboard config */
+#define PLATFORM_MARSBOARD_PWR_PIN                    0//
+#define PLATFORM_MARSBOARD_RST_PIN                    IMX_GPIO_NR(1, 29)
+#define PLATFORM_MARSBOARD_IRQ_PIN                    IMX_GPIO_NR(6, 14)
 
 // ****************************************************************************
 // Types
