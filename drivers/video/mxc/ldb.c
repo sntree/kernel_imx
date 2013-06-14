@@ -121,14 +121,6 @@ static struct fb_videomode ldb_modedb[] = {
 	 0,
 	 FB_VMODE_NONINTERLACED,
 	 FB_MODE_IS_DETAILED,},
-	{
-	 "LDB-GL097", 60, 1024, 768, KHZ2PICOS(65000),
-	 100, 200,
-	 10, 20,
-	 20, 8,
-	 0,
-	 FB_VMODE_NONINTERLACED,
-	 FB_MODE_IS_DETAILED,},
 };
 static int ldb_modedb_sz = ARRAY_SIZE(ldb_modedb);
 
