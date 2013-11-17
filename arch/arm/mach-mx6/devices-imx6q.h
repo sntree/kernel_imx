@@ -32,8 +32,8 @@ imx6q_anatop_thermal_imx_data __initconst;
 #define imx6q_add_anatop_thermal_imx(id, pdata)	\
 	imx_add_anatop_thermal_imx(&imx6q_anatop_thermal_imx_data, pdata)
 
-extern const struct imx_dma_data imx6q_dma_data __initconst;
-#define imx6q_add_dma()	imx_add_dma(&imx6q_dma_data);
+extern const struct imx_dma_res_data imx6q_dma_res_data __initconst;
+#define imx6q_add_dma()	imx_add_dma(&imx6q_dma_res_data);
 
 #define imx6q_add_gpmi(platform_data)	imx_add_gpmi(platform_data);
 
@@ -108,9 +108,9 @@ extern const struct imx_ldb_data imx6q_ldb_data __initconst;
 	platform_device_register_resndata(NULL, "mxc_v4l2_output",\
 			id, NULL, 0, NULL, 0);
 
-#define imx6q_add_v4l2_capture(id)	\
+#define imx6q_add_v4l2_capture(id, pdata)	\
 	platform_device_register_resndata(NULL, "mxc_v4l2_capture",\
-			id, NULL, 0, NULL, 0);
+			id, NULL, 0, pdata, sizeof(*pdata));
 
 extern const struct imx_mxc_hdmi_data imx6q_mxc_hdmi_data __initconst;
 #define imx6q_add_mxc_hdmi(pdata)	\

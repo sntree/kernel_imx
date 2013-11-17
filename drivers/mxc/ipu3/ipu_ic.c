@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2012 Freescale Semiconductor, Inc. All Rights Reserved.
+ * Copyright 2005-2013 Freescale Semiconductor, Inc. All Rights Reserved.
  */
 
 /*
@@ -69,6 +69,7 @@ void _ipu_vdi_set_motion(struct ipu_soc *ipu, ipu_motion_sel motion_sel)
 		reg |= VDI_C_MOT_SEL_LOW;
 
 	ipu_vdi_write(ipu, reg, VDI_C);
+	dev_dbg(ipu->dev, "VDI_C = \t0x%08X\n", reg);
 }
 
 void ic_dump_register(struct ipu_soc *ipu)
@@ -215,10 +216,10 @@ void _ipu_vdi_init(struct ipu_soc *ipu, ipu_channel_t channel, ipu_channel_param
 	}
 	ipu_vdi_write(ipu, reg, VDI_C);
 
-	if (params->mem_prp_vf_mem.field_fmt == V4L2_FIELD_INTERLACED_TB)
-		_ipu_vdi_set_top_field_man(ipu, false);
-	else if (params->mem_prp_vf_mem.field_fmt == V4L2_FIELD_INTERLACED_BT)
+	if (params->mem_prp_vf_mem.field_fmt == IPU_DEINTERLACE_FIELD_TOP)
 		_ipu_vdi_set_top_field_man(ipu, true);
+	else if (params->mem_prp_vf_mem.field_fmt == IPU_DEINTERLACE_FIELD_BOTTOM)
+		_ipu_vdi_set_top_field_man(ipu, false);
 
 	_ipu_vdi_set_motion(ipu, params->mem_prp_vf_mem.motion_sel);
 
@@ -240,7 +241,9 @@ void _ipu_ic_init_prpvf(struct ipu_soc *ipu, ipu_channel_params_t *params, bool 
 	ipu_color_space_t in_fmt, out_fmt;
 
 	/* Setup vertical resizing */
-	if (!(params->mem_prp_vf_mem.outv_resize_ratio)) {
+	if (!(params->mem_prp_vf_mem.outv_resize_ratio) ||
+		(params->mem_prp_vf_mem.outv_resize_ratio >=
+						IC_RSZ_MAX_RESIZE_RATIO)) {
 		_calc_resize_coeffs(ipu, params->mem_prp_vf_mem.in_height,
 				params->mem_prp_vf_mem.out_height,
 				&resizeCoeff, &downsizeCoeff);
@@ -250,7 +253,9 @@ void _ipu_ic_init_prpvf(struct ipu_soc *ipu, ipu_channel_params_t *params, bool 
 
 	/* Setup horizontal resizing */
 	/* Upadeted for IC split case */
-	if (!(params->mem_prp_vf_mem.outh_resize_ratio)) {
+	if (!(params->mem_prp_vf_mem.outh_resize_ratio) ||
+		(params->mem_prp_vf_mem.outh_resize_ratio >=
+						IC_RSZ_MAX_RESIZE_RATIO)) {
 		_calc_resize_coeffs(ipu, params->mem_prp_vf_mem.in_width,
 				params->mem_prp_vf_mem.out_width,
 				&resizeCoeff, &downsizeCoeff);
@@ -365,7 +370,9 @@ void _ipu_ic_init_prpenc(struct ipu_soc *ipu, ipu_channel_params_t *params, bool
 	ipu_color_space_t in_fmt, out_fmt;
 
 	/* Setup vertical resizing */
-	if (!(params->mem_prp_enc_mem.outv_resize_ratio)) {
+	if (!(params->mem_prp_enc_mem.outv_resize_ratio) ||
+		(params->mem_prp_enc_mem.outv_resize_ratio >=
+						IC_RSZ_MAX_RESIZE_RATIO)) {
 		_calc_resize_coeffs(ipu, params->mem_prp_enc_mem.in_height,
 				params->mem_prp_enc_mem.out_height,
 				&resizeCoeff, &downsizeCoeff);
@@ -375,7 +382,9 @@ void _ipu_ic_init_prpenc(struct ipu_soc *ipu, ipu_channel_params_t *params, bool
 
 	/* Setup horizontal resizing */
 	/* Upadeted for IC split case */
-	if (!(params->mem_prp_enc_mem.outh_resize_ratio)) {
+	if (!(params->mem_prp_enc_mem.outh_resize_ratio) ||
+		(params->mem_prp_enc_mem.outh_resize_ratio >=
+						IC_RSZ_MAX_RESIZE_RATIO)) {
 		_calc_resize_coeffs(ipu, params->mem_prp_enc_mem.in_width,
 				params->mem_prp_enc_mem.out_width,
 				&resizeCoeff, &downsizeCoeff);
@@ -444,7 +453,9 @@ void _ipu_ic_init_pp(struct ipu_soc *ipu, ipu_channel_params_t *params)
 	ipu_color_space_t in_fmt, out_fmt;
 
 	/* Setup vertical resizing */
-	if (!(params->mem_pp_mem.outv_resize_ratio)) {
+	if (!(params->mem_pp_mem.outv_resize_ratio) ||
+		(params->mem_pp_mem.outv_resize_ratio >=
+						IC_RSZ_MAX_RESIZE_RATIO)) {
 		_calc_resize_coeffs(ipu, params->mem_pp_mem.in_height,
 			    params->mem_pp_mem.out_height,
 			    &resizeCoeff, &downsizeCoeff);
@@ -455,7 +466,9 @@ void _ipu_ic_init_pp(struct ipu_soc *ipu, ipu_channel_params_t *params)
 
 	/* Setup horizontal resizing */
 	/* Upadeted for IC split case */
-	if (!(params->mem_pp_mem.outh_resize_ratio)) {
+	if (!(params->mem_pp_mem.outh_resize_ratio) ||
+		(params->mem_pp_mem.outh_resize_ratio >=
+						IC_RSZ_MAX_RESIZE_RATIO)) {
 		_calc_resize_coeffs(ipu, params->mem_pp_mem.in_width,
 							params->mem_pp_mem.out_width,
 							&resizeCoeff, &downsizeCoeff);
@@ -685,15 +698,16 @@ int _ipu_ic_idma_init(struct ipu_soc *ipu, int dma_chan,
 static void _init_csc(struct ipu_soc *ipu, uint8_t ic_task, ipu_color_space_t in_format,
 		      ipu_color_space_t out_format, int csc_index)
 {
-
-/*     Y = R *  .299 + G *  .587 + B *  .114;
-       U = R * -.169 + G * -.332 + B *  .500 + 128.;
-       V = R *  .500 + G * -.419 + B * -.0813 + 128.;*/
+	/*
+	 * Y =  0.257 * R + 0.504 * G + 0.098 * B +  16;
+	 * U = -0.148 * R - 0.291 * G + 0.439 * B + 128;
+	 * V =  0.439 * R - 0.368 * G - 0.071 * B + 128;
+	 */
 	static const uint32_t rgb2ycbcr_coeff[4][3] = {
-		{0x004D, 0x0096, 0x001D},
-		{0x01D5, 0x01AB, 0x0080},
-		{0x0080, 0x0195, 0x01EB},
-		{0x0000, 0x0200, 0x0200},	/* A0, A1, A2 */
+		{0x0042, 0x0081, 0x0019},
+		{0x01DA, 0x01B6, 0x0070},
+		{0x0070, 0x01A2, 0x01EE},
+		{0x0040, 0x0200, 0x0200},	/* A0, A1, A2 */
 	};
 
 	/* transparent RGB->RGB matrix for combining
@@ -841,7 +855,7 @@ static bool _calc_resize_coeffs(struct ipu_soc *ipu,
 	   where M = 2^13, SI - input size, SO - output size    */
 	*resizeCoeff = (8192L * (tempSize - 1)) / (outSize - 1);
 	if (*resizeCoeff >= 16384L) {
-		dev_err(ipu->dev, "Warning! Overflow on resize coeff.\n");
+		dev_dbg(ipu->dev, "Warning! Overflow on resize coeff.\n");
 		*resizeCoeff = 0x3FFF;
 	}
 

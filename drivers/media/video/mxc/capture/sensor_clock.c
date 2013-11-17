@@ -26,31 +26,6 @@
 #include <mach/hardware.h>
 #include <asm/mach-types.h>
 
-#if defined(CONFIG_MXC_IPU_V1) || defined(CONFIG_VIDEO_MXC_EMMA_CAMERA) \
-			       || defined(CONFIG_VIDEO_MXC_CSI_CAMERA_MODULE) \
-			       || defined(CONFIG_VIDEO_MXC_CSI_CAMERA)
-/*
- * set_mclk_rate
- *
- * @param       p_mclk_freq  mclk frequence
- *
- */
-void set_mclk_rate(uint32_t *p_mclk_freq)
-{
-	struct clk *clk;
-	uint32_t freq = 0;
-
-	clk = clk_get(NULL, "csi_clk");
-
-	freq = clk_round_rate(clk, *p_mclk_freq);
-	clk_set_rate(clk, freq);
-
-	*p_mclk_freq = freq;
-
-	clk_put(clk);
-	pr_debug("mclk frequency = %d\n", *p_mclk_freq);
-}
-#else
 /*
  * set_mclk_rate
  *
@@ -73,14 +48,13 @@ void set_mclk_rate(uint32_t *p_mclk_freq, uint32_t csi)
 		}
 	} else if (cpu_is_mx6q() || cpu_is_mx6dl()) {
 		if (csi == 0) {
-			if (machine_is_mx6q_sabrelite())
-				mclk = "clko2_clk";
-			else
-				mclk = "clko_clk";
+			mclk = "clko2_clk";
 		} else {
 			pr_err("invalid csi num %d\n", csi);
 			return;
 		};
+	} else if (cpu_is_mx25() || cpu_is_mx6sl()) {	/* only has CSI0 */
+		mclk = "csi_clk";
 	} else {
 		if (csi == 0) {
 			mclk = "csi_mclk1";
@@ -102,7 +76,6 @@ void set_mclk_rate(uint32_t *p_mclk_freq, uint32_t csi)
 	clk_put(clk);
 	pr_debug("%s frequency = %d\n", mclk, *p_mclk_freq);
 }
-#endif
 
 /* Exported symbols for modules. */
 EXPORT_SYMBOL(set_mclk_rate);

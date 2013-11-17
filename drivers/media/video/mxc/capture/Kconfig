@@ -13,7 +13,7 @@ config VIDEO_MXC_EMMA_CAMERA
 	default y
 
 config VIDEO_MXC_CSI_CAMERA
-	tristate "MX25 CSI camera support"
+	tristate "CSI camera support"
 	depends on !VIDEO_MXC_EMMA_CAMERA
 
 config VIDEO_MXC_CSI_DMA
@@ -25,11 +25,6 @@ config VIDEO_MXC_CSI_DMA
 	  to use less physical contiguous memory to capture big resolution still image. But
 	  with this method the CSC (Color Space Conversion) and resize are not supported.
 	  If unsure, say N.
-
-choice
-	prompt "Select Camera/TV Decoder"
-	default MXC_CAMERA_OV3640
-	depends on VIDEO_MXC_CAMERA
 
 config MXC_CAMERA_MC521DA
 	tristate "Magnachip mc521da camera support"
@@ -105,7 +100,6 @@ config MXC_TVIN_ADV7180
 	---help---
 	  If you plan to use the adv7180 video decoder with your MXC system, say Y here.
 
-endchoice
 
 config MXC_CAMERA_OV5640_MIPI
 	tristate "OmniVision ov5640 camera support using mipi"
@@ -116,16 +110,39 @@ config MXC_CAMERA_OV5640_MIPI
 	---help---
 	  If you plan to use the ov5640 Camera with mipi interface in your MXC system, say Y here.
 
+config MXC_MIPI_CSI2_TVIN_ADV7280
+	tristate "Analog Devices adv7280 TV Decoder Input support using mipi-csi2"
+	depends on (!VIDEO_MXC_EMMA_CAMERA)
+	depends on ARCH_MX6Q
+	select MXC_MIPI_CSI2 if ARCH_MX6Q
+	select MXC_CAMERA_SENSOR_CLK
+	---help---
+	  If you plan to use the adv7280 device with mipi-csi2 interface
+	  in your iMX6 system, say Y here.
+
 config MXC_CAMERA_SENSOR_CLK
 	tristate "camera clock"
-	depends on !VIDEO_MXC_EMMA_CAMERA                                                                         
-	---help---                                                                                                
-	  If you plan to use the Camera with your MXC system, say Y here.                                         
+	depends on !VIDEO_MXC_EMMA_CAMERA
+	---help---
+	  If you plan to use the Camera with your MXC system, say Y here.
+
+choice
+	prompt "Select Overlay Rounting"
+	default MXC_IPU_DEVICE_QUEUE_SDC
+	depends on VIDEO_MXC_IPU_CAMERA && FB_MXC_SYNC_PANEL
+
+config MXC_IPU_DEVICE_QUEUE_SDC
+	tristate "Queue ipu device for overlay library"
+	depends on VIDEO_MXC_IPU_CAMERA
+	---help---
+	  Use case CSI->MEM->IPU DEVICE->SDC:
+		Images from sensor will be frist recieved in memory,then
+		queue to ipu device for processing if needed, and displaying
+		it on synchronous display with SDC use case.
 
 config MXC_IPU_PRP_VF_SDC
-	tristate "Pre-Processor VF SDC library"
-	depends on VIDEO_MXC_IPU_CAMERA && FB_MXC_SYNC_PANEL
-	default y
+	bool "Pre-Processor VF SDC library"
+	depends on VIDEO_MXC_IPU_CAMERA
 	---help---
 	  Use case PRP_VF_SDC:
 		Preprocessing image from smart sensor for viewfinder and
@@ -134,6 +151,8 @@ config MXC_IPU_PRP_VF_SDC
 		CSI -> IC (PRP VF) -> MEM
 		MEM -> IC (ROT) -> MEM
 		MEM -> SDC (FG/BG)
+
+endchoice
 
 config MXC_IPU_PRP_ENC
 	tristate "Pre-processor Encoder library"

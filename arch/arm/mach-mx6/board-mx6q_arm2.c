@@ -1538,6 +1538,21 @@ static struct mipi_csi2_platform_data mipi_csi2_pdata = {
 	.pixel_clk	= "emi_clk",
 };
 
+static struct fsl_mxc_capture_platform_data capture_data[] = {
+	{
+		.csi = 0,
+		.ipu = 0,
+		.mclk_source = 0,
+		.is_mipi = 0,
+	}, {
+		.csi = 1,
+		.ipu = 0,
+		.mclk_source = 0,
+		.is_mipi = 1,
+	},
+};
+
+
 static void arm2_suspend_enter(void)
 {
 	/* suspend preparation */
@@ -2091,7 +2106,8 @@ static void __init mx6_arm2_init(void)
 	imx6q_add_lcdif(&lcdif_data);
 	imx6q_add_ldb(&ldb_data);
 	imx6q_add_v4l2_output(0);
-	imx6q_add_v4l2_capture(0);
+	imx6q_add_v4l2_capture(0, &capture_data[0]);
+	imx6q_add_v4l2_capture(1, &capture_data[1]);
 
 	imx6q_add_imx_snvs_rtc();
 

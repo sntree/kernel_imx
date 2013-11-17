@@ -334,10 +334,10 @@ static iomux_v3_cfg_t mx6q_marsboard_pads[] = {
 
 static iomux_v3_cfg_t mx6q_marsboard_csi0_sensor_pads[] = {
 	/* IPU1 Camera */
-	MX6Q_PAD_CSI0_DAT8__IPU1_CSI0_D_8,
-	MX6Q_PAD_CSI0_DAT9__IPU1_CSI0_D_9,
-	MX6Q_PAD_CSI0_DAT10__IPU1_CSI0_D_10,
-	MX6Q_PAD_CSI0_DAT11__IPU1_CSI0_D_11,
+//	MX6Q_PAD_CSI0_DAT8__IPU1_CSI0_D_8,
+//	MX6Q_PAD_CSI0_DAT9__IPU1_CSI0_D_9,
+//	MX6Q_PAD_CSI0_DAT10__IPU1_CSI0_D_10,
+//	MX6Q_PAD_CSI0_DAT11__IPU1_CSI0_D_11,
 	MX6Q_PAD_CSI0_DAT12__IPU1_CSI0_D_12,
 	MX6Q_PAD_CSI0_DAT13__IPU1_CSI0_D_13,
 	MX6Q_PAD_CSI0_DAT14__IPU1_CSI0_D_14,
@@ -346,7 +346,7 @@ static iomux_v3_cfg_t mx6q_marsboard_csi0_sensor_pads[] = {
 	MX6Q_PAD_CSI0_DAT17__IPU1_CSI0_D_17,
 	MX6Q_PAD_CSI0_DAT18__IPU1_CSI0_D_18,
 	MX6Q_PAD_CSI0_DAT19__IPU1_CSI0_D_19,
-	MX6Q_PAD_CSI0_DATA_EN__IPU1_CSI0_DATA_EN,
+//	MX6Q_PAD_CSI0_DATA_EN__IPU1_CSI0_DATA_EN,
 	MX6Q_PAD_CSI0_MCLK__IPU1_CSI0_HSYNC,
 	MX6Q_PAD_CSI0_PIXCLK__IPU1_CSI0_PIXCLK,
 	MX6Q_PAD_CSI0_VSYNC__IPU1_CSI0_VSYNC,
@@ -666,7 +666,8 @@ static void mx6q_csi0_io_init(void)
 	msleep(1);
 	gpio_set_value(MX6Q_MARSBOARD_CSI0_RST, 1);
 
-	/* For MX6Q GPR1 bit19 and bit20 meaning:
+	/* For MX6Q:
+	 * GPR1 bit19 and bit20 meaning:
 	 * Bit19:       0 - Enable mipi to IPU1 CSI0
 	 *                      virtual channel is fixed to 0
 	 *              1 - Enable parallel interface to IPU1 CSI0
@@ -677,12 +678,21 @@ static void mx6q_csi0_io_init(void)
 	 *      virtual channel is fixed to 1
 	 * IPU2 CSI0 directly connect to mipi csi2,
 	 *      virtual channel is fixed to 2
+	 *
+	 * For MX6DL:
+	 * GPR13 bit 0-2 IPU_CSI0_MUX
+	 *   000 MIPI_CSI0
+	 *   100 IPU CSI0
 	 */
-	mxc_iomux_set_gpr_register(1, 19, 1, 1);
+	if (cpu_is_mx6q())
+		mxc_iomux_set_gpr_register(1, 19, 1, 1);
+	else if (cpu_is_mx6dl())
+		mxc_iomux_set_gpr_register(13, 0, 3, 4);
 }
 
 static struct fsl_mxc_camera_platform_data camera_data = {
 	.mclk = 24000000,
+	.mclk_source = 0,
 	.csi = 0,
 	.io_init = mx6q_csi0_io_init,
 };
@@ -691,16 +701,16 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 	{
 		I2C_BOARD_INFO("mxc_hdmi_i2c", 0x50),
 	},
-	{
-		I2C_BOARD_INFO("ov5642", 0x3c),
-		.platform_data = (void *)&camera_data,
-	},
 };
 
 static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	{
 		I2C_BOARD_INFO("egalax_ts", 0x4),
 		.irq = gpio_to_irq(MX6Q_MARSBOARD_CAP_TCH_INT1),
+	},
+	{
+		I2C_BOARD_INFO("ov5642", 0x3c),
+		.platform_data = (void *)&camera_data,
 	},
 };
 
@@ -896,29 +906,6 @@ static struct fsl_mxc_lcd_platform_data lcdif_data = {
 	.default_ifmt = IPU_PIX_FMT_RGB24,
 };
 
-static void ldb_init(void)
-{
-	int ret;
-
-        ret = gpio_request(MX6Q_MARSBOARD_LED_PWN, "led_pwn");
-        if (ret) {
-                pr_err("failed to get GPIO MX6Q_MARSBOARD_LED_PWN: %d\n",
-                        ret);
-                return;
-        }
-
-        gpio_direction_output(MX6Q_MARSBOARD_LED_PWN, 1);
-#if 0
-        ret = gpio_request(MX6Q_MARSBOARD_LCD_PWN, "lcd_pwn");
-        if (ret) {
-                pr_err("failed to get GPIO MX6Q_MARSBOARD_LCD_PWN: %d\n",
-                        ret);
-                return;
-        }
-
-        gpio_direction_output(MX6Q_MARSBOARD_LCD_PWN, 1);
-#endif
-}
 
 static struct fsl_mxc_ldb_platform_data ldb_data = {
 	.ipu_id = 0,
@@ -950,6 +937,31 @@ static struct ion_platform_data imx_ion_data = {
 	},
 };
 
+
+
+static void ldb_init(void)
+{
+	int ret;
+
+        ret = gpio_request(MX6Q_MARSBOARD_LED_PWN, "led_pwn");
+        if (ret) {
+                pr_err("failed to get GPIO MX6Q_MARSBOARD_LED_PWN: %d\n",
+                        ret);
+                return;
+        }
+
+        gpio_direction_output(MX6Q_MARSBOARD_LED_PWN, 1);
+#if 0
+        ret = gpio_request(MX6Q_MARSBOARD_LCD_PWN, "lcd_pwn");
+        if (ret) {
+                pr_err("failed to get GPIO MX6Q_MARSBOARD_LCD_PWN: %d\n",
+                        ret);
+                return;
+        }
+
+        gpio_direction_output(MX6Q_MARSBOARD_LCD_PWN, 1);
+#endif
+}
 static void marsboard_suspend_enter(void)
 {
 	/* suspend preparation */
@@ -1228,6 +1240,19 @@ static struct mipi_csi2_platform_data mipi_csi2_pdata = {
 	.pixel_clk = "emi_clk",
 };
 
+static struct fsl_mxc_capture_platform_data capture_data[] = {
+	{
+		.csi = 0,
+		.ipu = 0,
+		.mclk_source = 0,
+		.is_mipi = 0,
+	}, {
+		.csi = 1,
+		.ipu = 0,
+		.mclk_source = 0,
+		.is_mipi = 1,
+	},
+};
 /*!
  * Board specific initialization.
  */
@@ -1265,7 +1290,9 @@ static void __init mx6_marsboard_board_init(void)
 	imx6q_add_lcdif(&lcdif_data);
 	imx6q_add_ldb(&ldb_data);
 	imx6q_add_v4l2_output(0);
-	imx6q_add_v4l2_capture(0);
+	imx6q_add_v4l2_capture(0, &capture_data[0]);
+	imx6q_add_v4l2_capture(1, &capture_data[1]);
+	
 	imx6q_add_mipi_csi2(&mipi_csi2_pdata);
 	imx6q_add_imx_snvs_rtc();
 
@@ -1351,6 +1378,7 @@ static void __init mx6_marsboard_board_init(void)
 	rate = clk_round_rate(clko2, 24000000);
 	clk_set_rate(clko2, rate);
 	clk_enable(clko2);
+
 	imx6q_add_busfreq();
 }
 

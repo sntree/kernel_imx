@@ -28,6 +28,9 @@
  */
 extern int g_ipu_hw_rev;
 
+#define IPU_MAX_VDI_IN_WIDTH	({g_ipu_hw_rev >= 3 ? \
+				   (968) : \
+				   (720); })
 #define IPU_DISP0_BASE		0x00000000
 #define IPU_MCU_T_DEFAULT	8
 #define IPU_DISP1_BASE		({g_ipu_hw_rev < 4 ? \
@@ -455,6 +458,8 @@ enum {
 	IC_CONF_KEY_COLOR_EN = 0x20000000,
 	IC_CONF_RWS_EN = 0x40000000,
 	IC_CONF_CSI_MEM_WR_EN = 0x80000000,
+
+	IC_RSZ_MAX_RESIZE_RATIO = 0x00004000,
 
 	IC_IDMAC_1_CB0_BURST_16 = 0x00000001,
 	IC_IDMAC_1_CB1_BURST_16 = 0x00000002,
